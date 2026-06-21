@@ -20,26 +20,24 @@
 ### 💻 Running the Vectorizer
 To convert a text image into optimized single-line vectors using custom configuration:
 ```bash
-python convert_to_svg.py a.jpg output_centerline.svg --centerline --no-adaptive --morph-close 5 --min-spur 1 --upscale 8 --morph-close 5
+python convert_to_svg.py input.jpg output_centerline.svg --centerline --no-adaptive --morph-close 5 --min-spur 1 --upscale 8 --morph-close 5
 ```
 
 Here is the visual evidence of the conversion from the high-resolution raster image ([input.jpg](input.jpg)) to the thinned centerline stroke paths ([output_centerline.svg](output_centerline.svg)).
 
 ### 1. Full-Page Comparison (Input vs. SVG Output)
 Below is the full-page overview comparison. The left shows the original raster text ([input.jpg](input.jpg)) and the right shows the generated thinned centerline paths ([output_centerline.svg](docs/output_centerline.svg)).
-![Full Page Comparison](docs/comparison_full.png)
+# <p align="center"> <img src="docs/comparison_full.png" alt="Full Page Comparison" style="max-width:100%;"/> </p>
 
 ### 2. Zoomed-In Details & Loop Preservation
 To prevent plotters from bleeding ink and closing loops, KDRAW's pre-smoothing keeps character loops (`a`, `e`, `o`, `u`) perfectly open. The left shows the input pixels and the right shows the single-line thinned paths.
 
 #### Region 0: Title and Introduction Text
-![Region 0 Zoom](docs/comparison_region0.png)
+# <p align="center"> <img src="docs/comparison_region0.png" alt="Region 0 Zoom" style="max-width:100%;"/> </p>
 
 #### Region 1: Body Details (Dots of `i` & Colons)
 Observe how the dots of the letter `i` and colons are preserved as independent, clean path strokes rather than being merged or pruned:
-![Region 1 Zoom](docs/comparison_region1.png)
-
----
+# <p align="center"> <img src="docs/comparison_region1.png" alt="Region 1 Zoom" style="max-width:100%;"/> </p>
 
 ## ⚡ Key Highlights & Core Capabilities
 
