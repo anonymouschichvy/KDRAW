@@ -1,5 +1,5 @@
-# <div align="center">🎛️ KDRAW: Topological Centerline SVG Vectorizer</div>
-
+# <p align="center"> <img src="http://kvenjoy.com/images/draw/icon.png" alt="logo" style="max-width:50%; height:300px;" /> </p>
+# <div align="center">KDRAW: Topological Centerline SVG Vectorizer</div>
 <div align="center">
   <strong>KDRAW is a high-precision topological centerline vectorizer that converts raster graphics into optimized, smooth single-stroke SVGs for CNC plotters, laser cutters, and CAM software.</strong>
 </div>
