@@ -1,98 +1,46 @@
-# 🎛️ KDRAW: Topological Centerline SVG Vectorizer
+# <div align="center">🎛️ KDRAW: Topological Centerline SVG Vectorizer</div>
 
-```
-    __  ______  ____  ___ _      __
-   / / / / __ \/ __ \/   | | /| / /
-  / /_/ / / / / /_/ / /| | |/ |/ / 
- / __  / /_/ / _, _/ ___ | |/|/ /  
-/_/ /_/\____/_/ |_/_/  |_|__/|__/   
-                                   
-  Topological Skeleton Tracing & Curve Smoothing for CNC Plotters
-```
+<div align="center">
+  <strong>KDRAW is a high-precision topological centerline vectorizer that converts raster graphics into optimized, smooth single-stroke SVGs for CNC plotters, laser cutters, and CAM software.</strong>
+</div>
 
----
+<br />
 
-## 🎨 Standalone Vector Engine
-**KDRAW** is a high-precision standalone vector engine designed for CNC plotters, laser cutters, and CAM software. When translating text or hand-drawn schematics into physical map plots, conventional outline tracing causes double-stroke "bubble letters" that bleed and ruin the final output. 
-
-KDRAW resolves this by extracting **single-stroke centerlines** using morphological skeletonization and graph topology. It optimizes path layouts to eliminate mechanical jitter, smooth pixelation wiggles, and reduce pen-up plotting travel.
+<div align="center">
+  <img src="https://img.shields.io/badge/Render-Centerline-blueviolet?style=for-the-badge&logo=visual-studio-code" alt="Centerline Mode" />
+  <img src="https://img.shields.io/badge/Optimize-TSP%20Greedy-success?style=for-the-badge&logo=python" alt="TSP Optimization" />
+  <img src="https://img.shields.io/badge/Smooth-Chaikin%20Subdivision-orange?style=for-the-badge&logo=scipy" alt="Chaikin Smoothing" />
+</div>
 
 ---
 
-## ⚡ Key Features
+## 📸 Visual Documentation & Evidence
+
+Here is the visual evidence of the conversion from the high-resolution raster image ([input.jpg](input.jpg)) to the thinned centerline stroke paths ([output_centerline.svg](output_centerline.svg)).
+
+### 1. Full-Page Comparison (Input vs. SVG Output)
+Below is the full-page overview comparison. The left shows the original raster text ([input.jpg](input.jpg)) and the right shows the generated thinned centerline paths ([output_centerline.svg](docs/output_centerline.svg)).
+![Full Page Comparison](docs/comparison_full.png)
+
+### 2. Zoomed-In Details & Loop Preservation
+To prevent plotters from bleeding ink and closing loops, KDRAW's pre-smoothing keeps character loops (`a`, `e`, `o`, `u`) perfectly open. The left shows the input pixels and the right shows the single-line thinned paths.
+
+#### Region 0: Title and Introduction Text
+![Region 0 Zoom](docs/comparison_region0.png)
+
+#### Region 1: Body Details (Dots of `i` & Colons)
+Observe how the dots of the letter `i` and colons are preserved as independent, clean path strokes rather than being merged or pruned:
+![Region 1 Zoom](docscomparison_region1.png)
+
+---
+
+## ⚡ Key Highlights & Core Capabilities
 
 * **🧩 Graph-Based Skeleton Tracing**: Represents the skeleton as a topological graph of nodes (junctions/endpoints) and edges. Prevents junction distortion and splits.
 * **🔎 4x Upscaled Anti-Aliasing**: Interpolates and smooths low-resolution input images before skeletonization to eliminate pixel-level wiggles.
 * **🛡️ Isolated Path Safety (i-Dot Preservation)**: Distinguishes between side spurs (noise) and isolated paths, ensuring colons, periods, and the dots of `i` are never pruned.
-* **🌀 Chaikin Subdivision**: Corner-cutting curve smoothing that rounds out characters organic-style without coordinate shrinkage.
+* **🌀 Chaikin Curve Fitting**: Corner-cutting curve smoothing that rounds out characters organic-style without coordinate shrinkage.
 * **🏎️ TSP Pen-Travel Optimization**: Solves the Travelling Salesperson Problem (TSP) on the path sequence to save up to **98% of pen-up travel distance**.
-
----
-
-## 🧠 Detailed Algorithm Breakdown
-
-KDRAW's core engine processes image vectors through a four-phase mathematical pipeline:
-
-### 1. High-Resolution Preprocessing & Binarization
-
-To solve discretization noise (which causes wiggles and spurious branches), KDRAW uses sub-pixel boundary smoothing:
-
-1. **Upscaling (`upscale_factor = 4`)**
-
-   ```text
-   f(x,y) = Σ(i=0→3) Σ(j=0→3) aᵢⱼ xⁱ yʲ
-   ```
-
-2. **Gaussian Blur (`blur_size = 9×9`)**
-
-   ```text
-   G(x,y) = 1/(2πσ²) · e^(-(x²+y²)/(2σ²))
-   ```
-
-3. **Otsu Binarization**
-
-   ```text
-   σ²w(T) = ω₀(T)σ²₀(T) + ω₁(T)σ²₁(T)
-   ```
-
-4. **Morphological Closing (`5×5`)**
-
-   Applies dilation followed by erosion using a circular structuring element to seal thin gaps.
-
----
-
-### 2. Topological Graph Construction
-Once the skeleton is computed (using scikit-image's Lee/Zhang-Suen thinning), we represent the pixel coordinates as a graph \(G = (V, E)\):
-1. **Adjacency Construction**: Each skeleton pixel \(p_i\) is mapped to its 8-connected neighbors in the skeleton set.
-2. **Pixel Classification**:
-   - **Endpoint**: degree = 1
-   - **Regular (Stroke)**: degree = 2
-   - **Junction**: degree \(\ge 3\)
-3. **Junction Clustering**: Contiguous junction pixels are grouped using Breadth-First Search (BFS) into singular "super-junction" nodes to eliminate double-junction artifacts.
-4. **Edge Tracing**:
-   - **Stroke Edges**: BFS traces degree-2 regular pixels from each node until hitting another node.
-   - **Direct Edges**: Identifies adjacent nodes (e.g., adjacent endpoints) and joins them directly to preserve short paths (such as the dots of `i` or periods).
-   - **Isolated Loops**: Traces closed cycles with degree-2 pixels and no node intersections (e.g., the letter `o`).
-
----
-
-### 3. Iterative Graph Pruning
-To clean up junctions and remove noise without breaking character shapes, we perform iterative graph reduction passes:
-* **Spur Pruning (`min_spur=16`)**: If an edge connects an endpoint node to a junction node, and its path length is \(< 16\) pixels, it is classified as a noise spur and deleted.
-* **Isolated Path Safety**: If an edge connects an endpoint node to another endpoint node (no junctions), it is protected from spur pruning to preserve punctuation and dots.
-* **Junction Collapsing (`collapse_junc=8`)**: If two junction nodes are connected by an edge of length \(\le 8\) pixels, they are merged into a single node to straighten joint coordinates.
-* **Degree-2 Node Merging**: Any node left with exactly degree 2 is collapsed, joining its two meeting edges into a single continuous path.
-
----
-
-### 4. Geometry Smoothing & Simplify
-1. **Scale Reduction**: Divides all path coordinates by the `upscale_factor` (4x).
-2. **RDP Bypass**: Bypasses simplification for 2-point straight segments to keep them exact. For larger paths, Ramer-Douglas-Peucker (RDP) simplifies coordinates with \(\epsilon = 0.3\).
-3. **Chaikin Curve Fitting**: Runs `3` iterations of corner-cutting subdivision. For a path segment \([p_i, p_{i+1}]\), new vertices are generated at:
-   \[
-   q_i = \frac{3}{4}p_i + \frac{1}{4}p_{i+1}, \quad r_i = \frac{1}{4}p_i + \frac{3}{4}p_{i+1}
-   \]
-4. **Post-decimation RDP**: Removes redundant collinear points from smoothed curves with a tight \(\epsilon_{post} = 0.1\).
 
 ---
 
@@ -116,23 +64,132 @@ graph TD
 
 ---
 
+## 📖 Complete Code Logic & Detailed Algorithms
+
+Below is the exhaustive pseudocode and logic breakdown of every helper and processing routine in the KDRAW engine (`convert_to_svg.py`).
+
+### 1. `get_hex_color(val, has_alpha)`
+* **Input**: Pixel value integer `val`, transparency flag `has_alpha`
+* **Output**: Hex string (`#RRGGBB`) or CSS color string (`rgba(...)`)
+* **Logic**:
+  1. Extract color channels using bit-masking:
+     - `a = (val >> 24) & 0xFF`, `r = (val >> 16) & 0xFF`, `g = (val >> 8) & 0xFF`, `b = val & 0xFF`
+  2. If `has_alpha` and `a < 255`, return `rgba(r, g, b, a/255.0)` formatted to 3 decimal places.
+  3. Otherwise, return hex string representation: `#{r:02x}{g:02x}{b:02x}`.
+
+### 2. `smooth_paths_laplacian(path, iterations, weight)`
+* **Input**: Curve coordinate array `path`, iterations count `iterations`, blend weight `weight`
+* **Output**: Smoothed coordinate array
+* **Logic**:
+  1. If path has less than 3 points, return original path.
+  2. Detect if path is closed by measuring Euclidean distance between start and end points:
+     - `is_closed = norm(path[0] - path[-1]) < 1.0`
+  3. For each iteration:
+     - Create a temporary copy of coordinates.
+     - If `is_closed`: 
+       - Update each index `i` (excluding the last endpoint) to be:
+         \[
+         p_i = (1 - w) \cdot p_i + w \cdot 0.5 \cdot (p_{i-1} + p_{i+1})
+         \]
+         where `i-1` and `i+1` wrap around using modulo arithmetic.
+       - Set the last point `path[-1] = path[0]` to maintain cycle closure.
+     - Else (open path):
+       - For indices `1` to `len(path) - 2` (keeping endpoints fixed):
+         \[
+         p_i = (1 - w) \cdot p_i + w \cdot 0.5 \cdot (p_{i-1} + p_{i+1})
+         \]
+
+### 3. `smooth_paths_chaikin(path, iterations)`
+* **Input**: Coordinate array `path`, passes count `iterations`
+* **Output**: Corner-cut coordinate array
+* **Logic**:
+  1. If path has less than 3 points, return original path.
+  2. For each iteration:
+     - If `is_closed`:
+       - For each line segment `[p_i, p_{i+1}]`:
+         - Add new vertex `q = 0.75 * p_i + 0.25 * p_{i+1}`
+         - Add new vertex `r = 0.25 * p_i + 0.75 * p_{i+1}`
+       - Append the first generated point to the end to close the loop.
+     - Else (open path):
+       - Keep original start point `p_0` as the first point.
+       - For each inner segment `[p_i, p_{i+1}]`:
+         - Add `q = 0.75 * p_i + 0.25 * p_{i+1}`
+         - Add `r = 0.25 * p_i + 0.75 * p_{i+1}`
+       - Keep original end point `p_n` as the last point.
+
+### 4. `optimize_paths(contours, max_join_dist)`
+* **Input**: List of curves `contours`, pen-down merging threshold `max_join_dist`
+* **Output**: Sorted and merged curves list, original travel distance, optimized travel distance
+* **Logic**:
+  1. Convert all contours to NumPy float arrays. Calculate baseline sequential pen travel.
+  2. Implement a greedy Travelling Salesperson (TSP) heuristic:
+     - Pop the first contour as the active path.
+     - While remaining contours exist:
+       - Find the distances from the active path's endpoint to the start and endpoints of all remaining contours.
+       - Identify the closest coordinate point.
+       - If the closest point belongs to the end of a contour, reverse that contour.
+       - If the distance to the closest contour is \(\le max\_join\_dist\), extend the active path coordinates directly with the closest contour coordinates (merging).
+       - Otherwise, append the active path to the optimized list and set the closest contour as the new active path.
+     - Append the final active path.
+
+### 5. `build_and_prune_graph(skel_bool, min_spur_length, collapse_dist)`
+* **Input**: Binary skeleton image `skel_bool`, spur limit `min_spur_length`, merge radius `collapse_dist`
+* **Output**: List of cleaned, continuous centerline coordinate paths
+* **Logic**:
+  1. Retrieve skeleton coordinates: `pixels = set(zip(*np.where(skel_bool)))`.
+  2. Compute 8-connected adjacency dictionary: `adj = {p: get_neighbors(p, pixels) for p in pixels}`.
+  3. Classify pixels:
+     - `endpoints` (neighbors == 1)
+     - `junctions` (neighbors >= 3)
+     - `regular` (neighbors == 2)
+  4. Cluster contiguous junction pixels using BFS. Each connected component of junction pixels forms a singular "super-junction" node.
+  5. Assign node IDs to all endpoints and junction clusters. Build `pixel_to_node` map.
+  6. Trace edges:
+     - For each node:
+       - If a neighbor is a regular pixel, trace along regular pixels (BFS) until hitting any node. Create a stroke edge.
+       - If a neighbor is directly in another node, create a direct node-to-node edge of length 2 (essential for preserving i-dots).
+  7. Locate isolated cycles (loops with no nodes, degree-2 only like in the letter `o`). Convert to closed loop edges.
+  8. Perform iterative topology reductions:
+     - **Spur Check**: If an edge connects an endpoint (degree 1) to a junction (degree >= 3), and its pixel length is \(< min\_spur\_length\), delete the edge.
+     - **Isolated Check**: If an edge connects two endpoints directly (degree 1 to 1), it is an isolated dot. Protect it from spur pruning.
+     - **Junction Collapse**: If an edge connects two junction nodes and is shorter than `collapse_dist`, merge the two junction nodes and update all matching edge node IDs.
+  9. Clean up: For any node left with degree 2 (exactly two edges), merge the paths of the two edges into a single edge.
+
+### 6. `convert_centerline(...)`
+* **Input**: File paths and all tuning thresholds (`upscale_factor`, `blur_size`, etc.)
+* **Output**: Stroke-only SVG file containing centerline paths
+* **Logic**:
+  1. Load input image. If `upscale_factor > 1`, upscale using `cv2.resize` with bicubic interpolation.
+  2. Apply Gaussian blur of size `blur_size` (only odd dimensions allowed).
+  3. Binarize:
+     - If `use_adaptive`: Apply local adaptive Gaussian thresholding using `cv2.adaptiveThreshold` with `block_size` and subtraction constant `c_val`.
+     - Else: Apply Otsu's thresholding using `cv2.threshold`.
+  4. Morphological filters: Apply closing and opening operations using an elliptical structuring element on the binary mask.
+  5. Thin binary mask to a single-pixel centerline using morphological `skeletonize` (Zhang-Suen/Lee).
+  6. Call `build_and_prune_graph` to trace skeleton pixels into a clean set of coordinate paths.
+  7. Downscale coordinate values by `upscale_factor` to match original image dimensions.
+  8. For each path:
+     - If the path has only 2 points, bypass simplification.
+     - Otherwise, simplify coordinates using RDP (`cv2.approxPolyDP`) with tolerance `epsilon`.
+  9. Apply smoothing: If `smooth_iters > 0`, call `smooth_paths_chaikin` or `smooth_paths_laplacian` for `smooth_iters` iterations.
+  10. Decimate coordinates post-smoothing using RDP with a tight tolerance `smooth_decimate`.
+  11. Call `optimize_paths` with `max_join` to minimize travel sequence.
+  12. Format and write paths into SVG XML nodes containing `<path d="..." fill="none" stroke="black" ... />`.
+
+---
+
 ## 🚀 Quick Start
 
-### Installation
+### 📦 Installation
 Ensure you have the required libraries installed:
 ```bash
 pip install opencv-python scikit-image numpy pillow
 ```
 
-### Basic Conversion (Centerline Mode)
-To convert a text image into optimized single-line vectors:
+### 💻 Running the Vectorizer
+To convert a text image into optimized single-line vectors using the recommended defaults:
 ```bash
-python convert_to_svg.py input.jpg a.svg --centerline --no-adaptive
-```
-### Advance Conversion (Centerline Mode)
-To convert a text image into optimized single-line vectors:
-```bash
- python convert_to_svg.py a.jpg output_centerline.svg --centerline --no-adaptive --morph-close 5 --min-spur 1 --upscale 8 --morph-close 5
+python convert_to_svg.py input.jpg output_centerline.svg --centerline --no-adaptive
 ```
 
 ---
@@ -158,7 +215,7 @@ To convert a text image into optimized single-line vectors:
 
 Running KDRAW with the optimal centerline defaults provides a massive boost in vector quality and plotter throughput:
 
-> [!TIP]
+> [!IMPORTANT]
 > **TSP Optimization saves up to 98% of pen-up travel**, reducing wear and tear on plotter belts and servos.
 
 | Metric | Raw Skeleton Trace | KDRAW Graph Pipeline | Improvement |
