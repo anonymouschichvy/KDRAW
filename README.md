@@ -76,17 +76,205 @@ graph TD
 Below is the exhaustive pseudocode and logic breakdown of every helper and processing routine in the KDRAW engine (`convert_to_svg.py`).
 
 ### 1. `get_hex_color(val, has_alpha)`
-* **Input**: Pixel value integer `val`, transparency flag `has_alpha`
-* **Output**: Hex string (`#RRGGBB`) or CSS color string (`rgba(...)`)
-* **Logic**:
-  1. Extract color channels using bit-masking:
-     - `a = (val >> 24) & 0xFF`, `r = (val >> 16) & 0xFF`, `g = (val >> 8) & 0xFF`, `b = val & 0xFF`
-  2. If `has_alpha` and `a < 255`, return `rgba(r, g, b, a/255.0)` formatted to 3 decimal places.
-  3. Otherwise, return hex string representation: `#{r:02x}{g:02x}{b:02x}`.
+
+**Input:** Packed 32-bit pixel value `val`, transparency flag `has_alpha`  
+**Output:** Hex color string (`#RRGGBB`) or CSS RGBA string (`rgba(...)`)
+
+#### Color Channel Extraction
+
+Given a packed ARGB pixel:
+
+```math
+\text{val}
+=
+(A \ll 24)
++
+(R \ll 16)
++
+(G \ll 8)
++
+B
+```
+
+Extract each channel using bitwise operations:
+
+```math
+A
+=
+(\text{val} \gg 24)
+\;\&\;
+255
+```
+
+```math
+R
+=
+(\text{val} \gg 16)
+\;\&\;
+255
+```
+
+```math
+G
+=
+(\text{val} \gg 8)
+\;\&\;
+255
+```
+
+```math
+B
+=
+\text{val}
+\;\&\;
+255
+```
+
+where:
+
+```math
+0 \le A,R,G,B \le 255
+```
+
+#### Alpha Normalization
+
+When transparency is enabled, convert the alpha channel to the CSS opacity range:
+
+```math
+\alpha
+=
+\frac{A}{255}
+```
+
+with:
+
+```math
+0 \le \alpha \le 1
+```
+
+#### Output Selection
+
+If transparency is present:
+
+```math
+\text{has\_alpha}
+\land
+A < 255
+```
+
+return:
+
+```math
+\text{rgba}(R,G,B,\alpha)
+```
+
+Otherwise return:
+
+```math
+\#RRGGBB
+```
+
+where:
+
+```math
+RRGGBB
+=
+\text{hex}(R)
+\;||\;
+\text{hex}(G)
+\;||\;
+\text{hex}(B)
+```
+
+and \(||\) denotes string concatenation.
+
+---
 
 ### 2. `smooth_paths_laplacian(path, iterations, weight)`
-* **Input**: Curve coordinate array `path`, iterations count `iterations`, blend weight `weight`
-* **Output**: Smoothed coordinate array
+
+**Input:** Curve coordinate array `path`, iteration count `iterations`, smoothing weight `w`  
+**Output:** Laplacian-smoothed coordinate array
+
+#### Laplacian Smoothing Model
+
+For each vertex \( \mathbf{p}_i \), compute the local neighborhood average:
+
+```math
+\mathbf{m}_i
+=
+\frac{
+\mathbf{p}_{i-1}
++
+\mathbf{p}_{i+1}
+}{2}
+```
+
+The updated position is a weighted blend between the original point and its neighborhood mean:
+
+```math
+\mathbf{p}_i'
+=
+(1-w)\mathbf{p}_i
++
+w\mathbf{m}_i
+```
+
+Substituting the neighborhood average:
+
+```math
+\mathbf{p}_i'
+=
+(1-w)\mathbf{p}_i
++
+w
+\left(
+\frac{
+\mathbf{p}_{i-1}
++
+\mathbf{p}_{i+1}
+}{2}
+\right)
+```
+
+where:
+
+```math
+0 \le w \le 1
+```
+
+#### Interpretation
+
+Special cases:
+
+```math
+w = 0
+\quad\Rightarrow\quad
+\mathbf{p}_i' = \mathbf{p}_i
+```
+
+(No smoothing)
+
+```math
+w = 1
+\quad\Rightarrow\quad
+\mathbf{p}_i'
+=
+\frac{
+\mathbf{p}_{i-1}
++
+\mathbf{p}_{i+1}
+}{2}
+```
+
+(Complete neighborhood averaging)
+
+For intermediate values:
+
+```math
+0 < w < 1
+```
+
+the vertex moves proportionally toward the average of its neighboring vertices, reducing local curvature and noise while preserving the overall shape.
 * **Logic**:
   1. If path has less than 3 points, return original path.
 ### 2. `smooth_paths_laplacian(path, iterations, w)`
