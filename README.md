@@ -34,20 +34,30 @@ KDRAW resolves this by extracting **single-stroke centerlines** using morphologi
 KDRAW's core engine processes image vectors through a four-phase mathematical pipeline:
 
 ### 1. High-Resolution Preprocessing & Binarization
-To solve the discretization noise (which causes wiggles and spurious branches), KDRAW uses sub-pixel boundary smoothing:
-1. **upscale_factor (4x)**: Interpolates the grayscale image using a cubic kernel:
-   \[
-   f(x,y) = \sum_{i=0}^3 \sum_{j=0}^3 a_{ij} x^i y^j
-   \]
-2. **blur_size (9x9)**: Convolves the upscaled image with a 2D Gaussian kernel to smooth stair-step pixel edges:
-   \[
-   G(x,y) = \frac{1}{2\pi\sigma^2} e^{-\frac{x^2+y^2}{2\sigma^2}}
-   \]
-3. **Otsu Binarization**: Finds the global threshold \(T\) that minimizes intra-class variance:
-   \[
-   \sigma^2_w(T) = \omega_0(T)\sigma^2_0(T) + \omega_1(T)\sigma^2_1(T)
-   \]
-4. **Morphological Closing (5x5)**: Applies dilation followed by erosion using a circular structuring element to seal thin gaps.
+
+To solve discretization noise (which causes wiggles and spurious branches), KDRAW uses sub-pixel boundary smoothing:
+
+1. **Upscaling (`upscale_factor = 4`)**
+
+   ```text
+   f(x,y) = Σ(i=0→3) Σ(j=0→3) aᵢⱼ xⁱ yʲ
+   ```
+
+2. **Gaussian Blur (`blur_size = 9×9`)**
+
+   ```text
+   G(x,y) = 1/(2πσ²) · e^(-(x²+y²)/(2σ²))
+   ```
+
+3. **Otsu Binarization**
+
+   ```text
+   σ²w(T) = ω₀(T)σ²₀(T) + ω₁(T)σ²₁(T)
+   ```
+
+4. **Morphological Closing (`5×5`)**
+
+   Applies dilation followed by erosion using a circular structuring element to seal thin gaps.
 
 ---
 
