@@ -108,9 +108,6 @@ graph TD
 
 ## 🚀 Quick Start
 
-## NOTE
-Some of the letters is not optimized yet, like "t" and "f", likewise it will be solve soon:)
-
 ### Installation
 Ensure you have the required libraries installed:
 ```bash
@@ -125,7 +122,7 @@ python convert_to_svg.py input.jpg a.svg --centerline --no-adaptive
 ### Advance Conversion (Centerline Mode)
 To convert a text image into optimized single-line vectors:
 ```bash
-python convert_to_svg.py input.jpg a.svg output_centerline.svg --centerline --no-adaptive --blur 2 --upscale 5 --morph-close 5 --max-join 2.5 --smooth-iters 3
+ python convert_to_svg.py a.jpg output_centerline.svg --centerline --no-adaptive --morph-close 5 --min-spur 1 --upscale 8 --morph-close 5
 ```
 
 ---
