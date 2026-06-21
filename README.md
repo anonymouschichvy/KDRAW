@@ -64,9 +64,6 @@ graph TD
     G --> H[Chaikin Path Smoothing]
     H --> I[TSP Sort & Max-Join]
     I --> J[Stroke SVG output.svg]
-    
-    style A fill:#f9f,stroke:#333,stroke-width:2px
-    style J fill:#bbf,stroke:#333,stroke-width:2px
 ```
 
 ---
@@ -576,6 +573,20 @@ Running KDRAW with the optimal centerline defaults provides a massive boost in v
 | **Pen-Up Travel Distance** | 1,684,002 px | **35,425 px** | **97.9% distance saved** |
 | **Average Angle Change** | 49.9° | **17.4°** | **Curves are 2.8x smoother** |
 | **Punctuation & Dots** | Lost / Jagged | **Perfectly Preserved** | Flawless |
+
+---
+
+## 💖 Donate & Support
+
+If you find this project useful and would like to support the deployment of FishTrack buoys for coastal fishing communities, donations are greatly appreciated!
+
+<p align="left">
+  <a href="bitcoin:13zWnp2ty3NPzAXX9QxwEeoPSKhN5tPzic">
+    <img src="https://img.shields.io/badge/Donate-Bitcoin-F7931A?style=for-the-badge&logo=bitcoin&logoColor=white" alt="Donate Bitcoin" />
+  </a>
+</p>
+
+**Bitcoin Address:** `13zWnp2ty3NPzAXX9QxwEeoPSKhN5tPzic`
 
 ---
 
